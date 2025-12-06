@@ -1,37 +1,138 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import eslint from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import pluginReact from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import nextPlugin from '@next/eslint-plugin-next'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
-
+/** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  // Base configurations
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  pluginReact.configs.flat.recommended,
+
+  nextPlugin.configs['core-web-vitals'],
+
+  // Global settings
   {
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+  },
+
+  // Ignores
+  {
+    ignores: [
+      'node_modules/',
+      '.next/',
+      'next-env.d.ts',
+      'src/app/(payload)/admin/importMap.ts',
+      'src/app/(payload)/admin/**/not-found.tsx',
+      'src/app/(payload)/admin/**/page.tsx',
+      'src/payload-types.ts',
+      'src/app/(payload)/layout.tsx', // Add this
+    ],
+  },
+
+  // General rules for all files
+  {
+    plugins: { 'react-hooks': reactHooks },
     rules: {
-      '@typescript-eslint/ban-ts-comment': 'warn',
-      '@typescript-eslint/no-empty-object-type': 'warn',
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'prefer-arrow-callback': 'error',
+      'arrow-body-style': ['error', 'as-needed'],
+      'func-style': ['error', 'expression'],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+
+      // Core rules
+      eqeqeq: 'error',
+      'no-console': 'warn',
+      'prefer-destructuring': 'error',
+      'prefer-template': 'error',
+      'no-nested-ternary': 'error',
+      'no-unneeded-ternary': 'error',
+
+      // React rules
+      'react/prop-types': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'react/self-closing-comp': 'error',
+      'react/display-name': 'off',
+      'react/jsx-boolean-value': 'warn',
+      'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
+
+      // React Hooks rules
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      // Next.js rules
+      '@next/next/no-page-custom-font': 'off',
+    },
+  },
+
+  // TypeScript-specific configuration WITH type checking (only for src files)
+  ...tseslint.configs.stylisticTypeChecked.map(config => ({
+    ...config,
+    files: ['src/**/*.{ts,tsx}'],
+  })),
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // Override for TypeScript
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-unsafe-enum-comparison': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      '@typescript-eslint/consistent-indexed-object-style': ['warn', 'index-signature'],
+      '@typescript-eslint/naming-convention': [
+        'error',
         {
-          vars: 'all',
-          args: 'after-used',
-          ignoreRestSiblings: false,
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^(_|ignore)',
+          selector: 'interface',
+          format: ['PascalCase'],
+          custom: {
+            regex: '^I[A-Z]',
+            match: true,
+          },
+        },
+        {
+          selector: 'typeAlias',
+          format: ['PascalCase'],
+          custom: {
+            regex: '^T[A-Z]',
+            match: true,
+          },
         },
       ],
     },
   },
+
+  // Config files (disable type checking)
   {
-    ignores: ['.next/'],
+    files: ['*.config.{js,ts,mjs,mts,cjs,cts}', '*.setup.{js,ts,mjs,mts}'],
+    ...tseslint.configs.disableTypeChecked,
+  },
+
+  // JavaScript files (disable type checking)
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    ...tseslint.configs.disableTypeChecked,
   },
 ]
 

@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+set -e
+
+# Change to frontend directory since we're running from git root
+echo "▶️  Checking code formatting..."
+pnpm run format:check
+
+echo "▶️  Running lint check..."
+pnpm run lint
+
+echo "▶️  Building project..."
+pnpm run build
+
+#echo "▶️  Running tests..."
+#pnpm run test
+
+echo "✅ All pre-commit checks passed!"

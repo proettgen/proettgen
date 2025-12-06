@@ -1,7 +1,8 @@
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
-export const GET = async (request: Request) => {
+export const GET = async () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const payload = await getPayload({
     config: configPromise,
   })
